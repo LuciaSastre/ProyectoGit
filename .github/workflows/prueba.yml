@@ -1,0 +1,21 @@
+name: Prueba Self-Hosted Runner
+
+on:
+  push:
+
+jobs:
+  comprobar-token:
+    runs-on: self-hosted
+
+    steps:
+      - name: Comprobar DEV_TOKEN
+        shell: powershell
+        env:
+          DEV_TOKEN: ${{ secrets.DEV_TOKEN }}
+        run: |
+          if ($env:DEV_TOKEN -eq [Environment]::GetEnvironmentVariable("LOCAL_DEV_TOKEN", "User")) {
+            Write-Host "Los tokens coinciden"
+          } else {
+            Write-Host "Los tokens NO coinciden"
+            exit 1
+          }

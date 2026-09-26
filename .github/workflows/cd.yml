@@ -1,0 +1,45 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Incrementar versión
+        run: |
+          VERSION=$(grep -o 'AppVersion - [0-9]*' README.md | tail -1 | grep -o '[0-9]*')
+          NEW_VERSION=$((VERSION + 1))
+          echo "AppVersion - $NEW_VERSION - $(date '+%Y-%m-%d %H:%M:%S')" >> README.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "Incrementar versión a AppVersion - $NEW_VERSION"
+          git push
+
+  validate-prod:
+    runs-on: self-hosted
+    needs: update-readme
+
+    steps:
+      - name: Validar PROD_TOKEN
+        shell: bash
+        run: |
+          if [ "$LOCAL_PROD_TOKEN" = "${{ secrets.PROD_TOKEN }}" ]; then
+            echo "PROD_TOKEN válido"
+          else
+            echo "PROD_TOKEN no coincide"
+            exit 1
+          fi
